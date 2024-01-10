@@ -75,14 +75,18 @@ func (c *SQLConnector) Connect(ctx context.Context) (driver.Conn, error) {
 
 	var awsAthenaSession *session.Session
 	var err error
+	logLevel := aws.LogDebug
 	// respect AWS_SDK_LOAD_CONFIG and local ~/.aws/credentials, ~/.aws/config
 	if ok, _ := strconv.ParseBool(os.Getenv("AWS_SDK_LOAD_CONFIG")); ok {
 		if profile := c.config.GetAWSProfile(); profile != "" {
 			awsAthenaSession, err = session.NewSession(&aws.Config{
 				Credentials: credentials.NewSharedCredentials("", profile),
+				LogLevel:    &logLevel,
 			})
 		} else {
-			awsAthenaSession, err = session.NewSession(&aws.Config{})
+			awsAthenaSession, err = session.NewSession(&aws.Config{
+				LogLevel: &logLevel,
+			})
 		}
 	} else if c.config.GetAccessID() != "" {
 		staticCredentials := credentials.NewStaticCredentials(c.config.GetAccessID(),
@@ -95,7 +99,8 @@ func (c *SQLConnector) Connect(ctx context.Context) (driver.Conn, error) {
 		awsAthenaSession, err = session.NewSession(awsConfig)
 	} else {
 		awsAthenaSession, err = session.NewSession(&aws.Config{
-			Region: aws.String(c.config.GetRegion()),
+			Region:   aws.String(c.config.GetRegion()),
+			LogLevel: &logLevel,
 		})
 	}
 	if err != nil {
